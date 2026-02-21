@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShrikeOS Monitor v1.0</title>
+    <meta name="description" content="Retro amber CRT dashboard for Shrike-lite FPGA+MCU board monitoring and control">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- CRT Scanline Overlay -->
+    <div class="scanlines"></div>
+    <div class="crt-flicker"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <span class="logo-icon">▣</span>
+                <h1>SHRIKE<span class="accent">OS</span> MONITOR</h1>
+            </div>
+            <div class="header-right">
+                <span class="version">v1.0</span>
+                <span class="divider">│</span>
+                <span id="connection-status" class="status-badge disconnected">◉ DISCONNECTED</span>
+                <button id="connect-btn" class="btn btn-connect">⚡ CONNECT</button>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="dashboard-grid">
+            <!-- Temperature Gauge -->
+            <div class="panel" id="temp-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">◈</span> CORE TEMPERATURE
+                </div>
+                <div class="panel-body gauge-container">
+                    <canvas id="temp-gauge" width="200" height="200"></canvas>
+                    <div class="gauge-value">
+                        <span id="temp-value">--.-</span>
+                        <span class="gauge-unit">°C</span>
+                    </div>
+                    <div class="gauge-label">RP2040 ADC SENSOR</div>
+                </div>
+            </div>
+
+            <!-- Uptime -->
+            <div class="panel" id="uptime-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">◈</span> SYSTEM UPTIME
+                </div>
+                <div class="panel-body">
+                    <div class="big-counter" id="uptime-display">
+                        <span class="digit" id="up-h">00</span>
+                        <span class="colon blink">:</span>
+                        <span class="digit" id="up-m">00</span>
+                        <span class="colon blink">:</span>
+                        <span class="digit" id="up-s">00</span>
+                    </div>
+                    <div class="uptime-labels">
+                        <span>HRS</span><span>MIN</span><span>SEC</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Stats -->
+            <div class="panel" id="stats-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">◈</span> SYSTEM STATUS
+                </div>
+                <div class="panel-body stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">THREADS</span>
+                        <span class="stat-value" id="thread-count">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">MEMORY</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="mem-bar" style="width: 0%"></div>
+                        </div>
+                        <span class="stat-value" id="mem-value">--%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">LED STATE</span>
+                        <div class="led-indicator-row">
+                            <span class="led-dot" id="led-dot">●</span>
+                            <span class="stat-value" id="led-state">--</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">BLINK RATE</span>
+                        <span class="stat-value" id="blink-rate">-- ms</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Board Info -->
+            <div class="panel" id="board-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">◈</span> BOARD INFO
+                </div>
+                <div class="panel-body board-info">
+                    <div class="info-row"><span class="info-key">BOARD</span><span class="info-val">Shrike-lite</span>
+                    </div>
+                    <div class="info-row"><span class="info-key">MCU</span><span class="info-val">RP2040
+                            Cortex-M0+</span></div>
+                    <div class="info-row"><span class="info-key">FPGA</span><span class="info-val">SLG47910 1120
+                            LUT</span></div>
+                    <div class="info-row"><span class="info-key">RTOS</span><span class="info-val">Zephyr 4.1.0</span>
+                    </div>
+                    <div class="info-row"><span class="info-key">FLASH</span><span class="info-val">4 MB QSPI</span>
+                    </div>
+                    <div class="info-row"><span class="info-key">SRAM</span><span class="info-val">264 KB</span></div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="panel panel-wide" id="controls-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">◈</span> CONTROLS
+                </div>
+                <div class="panel-body controls-grid">
+                    <div class="control-group">
+                        <label>LED POWER</label>
+                        <div class="toggle-container">
+                            <button id="led-toggle" class="btn btn-toggle active">● ON</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>BLINK RATE</label>
+                        <div class="slider-container">
+                            <input type="range" id="blink-slider" min="50" max="2000" value="250" step="50">
+                            <span id="blink-slider-val" class="slider-val">250ms</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>OLED MESSAGE</label>
+                        <div class="input-group">
+                            <input type="text" id="oled-msg-input" maxlength="20" placeholder="Type message...">
+                            <button id="oled-msg-send" class="btn btn-send">SEND ▶</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Serial Terminal -->
+            <div class="panel panel-wide" id="terminal-panel">
+                <div class="panel-header">
+                    <span class="panel-icon">◈</span> SERIAL TERMINAL
+                    <button id="clear-terminal" class="btn btn-small">CLEAR</button>
+                </div>
+                <div class="panel-body">
+                    <div id="terminal" class="terminal">
+                        <div class="terminal-line system">[ ShrikeOS Monitor v1.0 ]</div>
+                        <div class="terminal-line system">[ Awaiting connection... ]</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span>◉ SHRIKE-LITE │ RP2040 + SLG47910 │ ZEPHYR RTOS │</span>
+            <span id="clock" class="clock">--:--:--</span>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

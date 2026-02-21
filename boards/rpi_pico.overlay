@@ -1,0 +1,45 @@
+/*
+ * ShrikeOS Monitor – Device Tree Overlay for Shrike-lite (rpi_pico base)
+ *
+ * - LED on GPIO 4 (GPIO for reliable blinking)
+ * - SSD1306 OLED on I2C1 (GP6=SDA, GP7=SCL)
+ * - USB CDC ACM serial console
+ */
+
+/ {
+	chosen {
+		zephyr,display = &ssd1306;
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+	};
+};
+
+/* Override the default LED from GPIO 25 to GPIO 4 (Shrike-lite) */
+&led0 {
+	gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+	label = "MCU User LED";
+};
+
+&i2c1 {
+	status = "okay";
+
+	ssd1306: ssd1306@3c {
+		compatible = "solomon,ssd1306fb";
+		reg = <0x3c>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+	};
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
